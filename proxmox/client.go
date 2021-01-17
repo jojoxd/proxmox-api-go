@@ -212,6 +212,20 @@ func (c *Client) GetVmConfig(vmr *VmRef) (vmConfig map[string]interface{}, err e
 	return
 }
 
+func (c *Client) GetPoolConfig(poolId string) (poolConfig map[string]interface{}, err error) {
+	var data map[string]interface{}
+	url := fmt.Sprintf("/pools/%s", poolId)
+	err = c.GetJsonRetryable(url, &data, 3)
+	if err != nil {
+		return nil, err
+	}
+	if data["data"] == nil {
+		return nil, errors.New("Pool Config not readable")
+	}
+	poolConfig = data["data"].(map[string]interface{})
+	return
+}
+
 func (c *Client) GetStorageStatus(vmr *VmRef, storageName string) (storageStatus map[string]interface{}, err error) {
 	err = c.CheckVmRef(vmr)
 	if err != nil {
@@ -541,6 +555,29 @@ func (c *Client) CreateLxcContainer(node string, vmParams map[string]interface{}
 	return
 }
 
+func (c *Client) CreatePool(poolId string, params map[string]interface{}) (exitStatus string, err error) {
+	reqbody := ParamsToBody(params)
+	url := fmt.Sprintf("/pools")
+	var resp *http.Response
+	resp, err = c.session.Post(url, nil, nil, &reqbody)
+	defer resp.Body.Close()
+	if err != nil {
+		// This might not work if we never got a body. We'll ignore errors in trying to read,
+		// but extract the body if possible to give any error information back in the exitStatus
+		b, _ := ioutil.ReadAll(resp.Body)
+		exitStatus = string(b)
+		return exitStatus, err
+	}
+
+	taskResponse, err := ResponseJSON(resp)
+	if err != nil {
+		return "", err
+	}
+	exitStatus, err = c.WaitForCompletion(taskResponse)
+
+	return
+}
+
 func (c *Client) CloneQemuVm(vmr *VmRef, vmParams map[string]interface{}) (exitStatus string, err error) {
 	reqbody := ParamsToBody(vmParams)
 	url := fmt.Sprintf("/nodes/%s/qemu/%d/clone", vmr.node, vmr.vmId)
@@ -647,6 +684,22 @@ func (c *Client) SetLxcConfig(vmr *VmRef, vmParams map[string]interface{}) (exit
 		if err != nil {
 			return nil, err
 		}
+		exitStatus, err = c.WaitForCompletion(taskResponse)
+	}
+	return
+}
+
+// SetPoolConfig - send config options
+func (c *Client) SetPoolConfig(poolId string, params map[string]interface{}) (exitStatus interface{}, err error) {
+	reqbody := ParamsToBody(params)
+	url := fmt.Sprintf("/pools/%s", poolId)
+	resp, err := c.session.Put(url, nil, nil, &reqbody)
+	if err == nil {
+		taskResponse,err := ResponseJSON(resp)
+		if err != nil {
+			return nil, err
+		}
+
 		exitStatus, err = c.WaitForCompletion(taskResponse)
 	}
 	return
