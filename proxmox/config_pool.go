@@ -9,8 +9,8 @@ import (
 )
 
 type configPool struct {
-	Name 		string `json:"name"`
-	Description string `json:"desc"`
+	Name 		string `json:"poolid"`
+	Description string `json:"comment"`
 }
 
 func NewConfigPool() configPool {
@@ -19,8 +19,8 @@ func NewConfigPool() configPool {
 
 func (config configPool) CreatePool(poolId string, client *Client) (err error) {
 	params := map[string]interface{}{
-		"name":        config.Name,
-		"description": config.Description,
+		"poolid":  config.Name,
+		"comment": config.Description,
 	}
 
 	exitStatus, err := client.CreatePool(poolId, params)
@@ -33,8 +33,8 @@ func (config configPool) CreatePool(poolId string, client *Client) (err error) {
 
 func (config configPool) UpdateConfig(poolId string, client *Client) (err error) {
 	configParams := map[string]interface{}{
-		"name":        config.Name,
-		"description": config.Description,
+		"poolid":  config.Name,
+		"comment": config.Description,
 	}
 
 	_, err = client.SetPoolConfig(poolId, configParams)
@@ -70,12 +70,12 @@ func NewConfigPoolFromApi(poolId string, client *Client) (config *configPool, er
 	}
 
 	name := ""
-	if _, isSet := poolConfig["name"]; isSet {
-		name = poolConfig["name"].(string)
+	if _, isSet := poolConfig["poolid"]; isSet {
+		name = poolConfig["poolid"].(string)
 	}
 	description := ""
-	if _, isSet := poolConfig["description"]; isSet {
-		description = poolConfig["description"].(string)
+	if _, isSet := poolConfig["comment"]; isSet {
+		description = poolConfig["comment"].(string)
 	}
 
 	config = &configPool{
