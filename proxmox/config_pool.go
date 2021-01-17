@@ -8,12 +8,16 @@ import (
 	"time"
 )
 
-type ConfigPool struct {
+type configPool struct {
 	Name 		string `json:"name"`
 	Description string `json:"desc"`
 }
 
-func (config ConfigPool) CreatePool(poolId string, client *Client) (err error) {
+func NewConfigPool() configPool {
+	return configPool{}
+}
+
+func (config configPool) CreatePool(poolId string, client *Client) (err error) {
 	params := map[string]interface{}{
 		"name":        config.Name,
 		"description": config.Description,
@@ -27,7 +31,7 @@ func (config ConfigPool) CreatePool(poolId string, client *Client) (err error) {
 	return
 }
 
-func (config ConfigPool) UpdateConfig(poolId string, client *Client) (err error) {
+func (config configPool) UpdateConfig(poolId string, client *Client) (err error) {
 	configParams := map[string]interface{}{
 		"name":        config.Name,
 		"description": config.Description,
@@ -42,8 +46,8 @@ func (config ConfigPool) UpdateConfig(poolId string, client *Client) (err error)
 	return err
 }
 
-func NewConfigPoolFromJson(io io.Reader) (config *ConfigPool, err error) {
-	config = &ConfigPool{}
+func NewConfigPoolFromJson(io io.Reader) (config *configPool, err error) {
+	config = &configPool{}
 	err = json.NewDecoder(io).Decode(config)
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +57,7 @@ func NewConfigPoolFromJson(io io.Reader) (config *ConfigPool, err error) {
 	return
 }
 
-func NewConfigPoolFromApi(poolId string, client *Client) (config *ConfigPool, err error) {
+func NewConfigPoolFromApi(poolId string, client *Client) (config *configPool, err error) {
 	var poolConfig map[string]interface{}
 	for ii := 0; ii < 3; ii++ {
 		poolConfig, err = client.GetPoolConfig(poolId)
@@ -74,7 +78,7 @@ func NewConfigPoolFromApi(poolId string, client *Client) (config *ConfigPool, er
 		description = poolConfig["description"].(string)
 	}
 
-	config = &ConfigPool{
+	config = &configPool{
 		Name:        name,
 		Description: description,
 	}
@@ -82,7 +86,7 @@ func NewConfigPoolFromApi(poolId string, client *Client) (config *ConfigPool, er
 	return
 }
 
-func (c ConfigPool) String() string {
+func (c configPool) String() string {
 	jsConf, _ := json.Marshal(c)
 	return string(jsConf)
 }
